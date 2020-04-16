@@ -179,15 +179,6 @@ public class PaneLayoutPreferencesPane extends PreferencesPane
 
       add(new Label("Choose the layout of the panes in RStudio by selecting from the controls in each quadrant.", true));
 
-      extraSourceCount_ = userPrefs.panes().getGlobalValue().getExtraSources();
-      addSource_ = new ImageButton("Add source", res_.iconAddSourcePane2x());
-      addSource_.setVisible(true);
-      add(addSource_);
-      addSource_.addClickHandler(clickEvent ->
-      {
-         extraSourceCount_++;
-         paneManager_.addSourceWindow();
-      });
       String[] visiblePanes = PaneConfig.getVisiblePanes();
 
       leftTop_ = new ListBox();
@@ -385,7 +376,7 @@ public class PaneLayoutPreferencesPane extends PreferencesPane
          
          userPrefs_.panes().setGlobalValue(PaneConfig.create(
                panes, tabSet1, tabSet2, hiddenTabSet,
-               consoleLeftOnTop, consoleRightOnTop, extraSourceCount_));
+               consoleLeftOnTop, consoleRightOnTop));
 
          dirty_ = false;
       }
@@ -439,7 +430,6 @@ public class PaneLayoutPreferencesPane extends PreferencesPane
 
    private final PreferencesDialogResources res_;
    private final UserPrefs userPrefs_;
-   private final ImageButton addSource_;
    private final ListBox leftTop_;
    private final ListBox leftBottom_;
    private final ListBox rightTop_;
@@ -456,5 +446,4 @@ public class PaneLayoutPreferencesPane extends PreferencesPane
    private boolean dirty_ = false;
 
    private PaneManager paneManager_;
-   private int extraSourceCount_;
 }

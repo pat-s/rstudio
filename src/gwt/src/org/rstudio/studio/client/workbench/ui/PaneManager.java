@@ -15,14 +15,12 @@
 package org.rstudio.studio.client.workbench.ui;
 
 import com.google.gwt.animation.client.Animation;
-import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.JsArray;
 import com.google.gwt.core.client.JsArrayString;
 import com.google.gwt.dom.client.Element;
 import com.google.gwt.user.client.Command;
 import com.google.gwt.user.client.Timer;
 import com.google.gwt.user.client.Window;
-//import com.google.gwt.user.client.ui.SimplePanel;
 import com.google.gwt.user.client.ui.SplitterResizedEvent;
 import com.google.gwt.user.client.ui.Widget;
 import com.google.inject.Inject;
@@ -272,19 +270,6 @@ public class PaneManager
       binder.bind(commands, this);
       source_.loadFullSource();
       
-      ArrayList<Widget> mylist = new ArrayList<Widget>();
-      int extraSourceCount = userPrefs.panes().getGlobalValue().getExtraSources();
-      for (int i = 0; i < extraSourceCount; i++)
-         source_.addDisplay();
-
-      int counter = 0;
-      for (Source.Display display : source_.getViews())
-      {
-         if (counter > 0)
-            mylist.add(display.asWidget());
-         counter++;
-      }
-
       PaneConfig config = validateConfig(userPrefs.panes().getValue().cast());
       initPanes(config);
 
@@ -296,7 +281,7 @@ public class PaneManager
 
 
       panel_ = pSplitPanel.get();
-      panel_.initialize(mylist, left_, right_);
+      panel_.initialize(left_, right_);
       
       // count the number of source docs assigned to this window
       JsArray<SourceDocument> docs = 
@@ -312,7 +297,6 @@ public class PaneManager
          }
       }
       
-      /* !!! need to update this to handle the list
       if (numDocs == 0 && sourceLogicalWindow_.getState() != WindowState.HIDE)
       {
          sourceLogicalWindow_.onWindowStateChange(
@@ -324,7 +308,6 @@ public class PaneManager
          sourceLogicalWindow_.onWindowStateChange(
                new WindowStateChangeEvent(WindowState.NORMAL));
       }
-      */
 
       userPrefs.panes().addValueChangeHandler(evt ->
       {
@@ -569,8 +552,7 @@ public class PaneManager
             paneConfig.getTabSet2(),
             paneConfig.getHiddenTabSet(),
             paneConfig.getConsoleLeftOnTop(),
-            paneConfig.getConsoleRightOnTop(),
-            source_.getViews().size() - 1).cast());
+            paneConfig.getConsoleRightOnTop()).cast());
          userPrefs_.writeUserPrefs();
       }
    }
@@ -799,11 +781,7 @@ public class PaneManager
       ArrayList<LogicalWindow> results = new ArrayList<>();
 
       JsArrayString panes = config.getQuadrants();
-      for (int i = 0; i < source_.getViews().size()-1; i++)
-      {
-         panes.push("Source " + Integer.toString(i));
-      }
-      for (int i = 0; i < panes.length(); i++)
+      for (int i = 0; i < 4; i++)
       {
          results.add(panesByName_.get(panes.get(i)));
       }
@@ -814,17 +792,7 @@ public class PaneManager
    {
       panesByName_ = new HashMap<>();
       panesByName_.put("Console", createConsole());
-      assert source_.getViews().size() > 0;
-      String kFrameNamePrefix = "Source";
-      for (int i = 0; i < source_.getViews().size(); i++)
-      {
-         {
-            String frameName = kFrameNamePrefix;
-            if (i > 0)
-               frameName += Integer.toString(i);
-            panesByName_.put(frameName, createSource(frameName, source_.getViewByIndex(i)));
-         }
-      }
+      panesByName_.put("Source", createSource());
 
       Triad<LogicalWindow, WorkbenchTabPanel, MinimizedModuleTabLayoutPanel> ts1 = createTabSet(
             "TabSet1",
@@ -1018,8 +986,7 @@ public class PaneManager
          paneConfig.getTabSet2(),
          tabListToJsArrayString(hiddenTabs_),
          paneConfig.getConsoleLeftOnTop(),
-         paneConfig.getConsoleRightOnTop(),
-         source_.getViews().size() - 1).cast());
+         paneConfig.getConsoleRightOnTop()).cast());
       userPrefs_.writeUserPrefs();
    }
 
@@ -1035,8 +1002,7 @@ public class PaneManager
          tabListToJsArrayString(tabs),
          tabListToJsArrayString(hiddenTabs_),
          paneConfig.getConsoleLeftOnTop(),
-         paneConfig.getConsoleRightOnTop(),
-         source_.getViews().size() - 1).cast());
+         paneConfig.getConsoleRightOnTop()).cast());
       userPrefs_.writeUserPrefs();
    }
 
@@ -1123,34 +1089,12 @@ public class PaneManager
 
    public LogicalWindow getSourceLogicalWindow()
    {
-      return sourceLogicalWindows_.get(0);
+      return sourceLogicalWindow_;
    }
    
    public LogicalWindow getConsoleLogicalWindow()
    {
       return panesByName_.get("Console");
-   }
-
-   public void addSourceWindow()
-   {
-      int id = source_.getViews().size();
-      PaneConfig.addSourcePane();
-      source_.addDisplay();
-      Source.Display display = source_.getViewByIndex(id);
-      String frameName = "Source " + Integer.toString(id);
-      panesByName_.put(frameName, createSource(frameName, display));
-      panel_.addLeftWidget(display.asWidget());
-
-      PaneConfig paneConfig = getCurrentConfig();
-      userPrefs_.panes().setGlobalValue(PaneConfig.create(
-         JsArrayUtil.copy(paneConfig.getQuadrants()),
-         paneConfig.getTabSet1(),
-         paneConfig.getTabSet2(),
-         paneConfig.getHiddenTabSet(),
-         paneConfig.getConsoleLeftOnTop(),
-         paneConfig.getConsoleRightOnTop(),
-         id).cast());
-      userPrefs_.writeUserPrefs();
    }
 
    private DualWindowLayoutPanel createSplitWindow(LogicalWindow top,
@@ -1206,16 +1150,15 @@ public class PaneManager
       return logicalWindow;
    }
 
-   private LogicalWindow createSource(String frameName, Source.Display display)
+   private LogicalWindow createSource()
    {
+      String frameName = "Source";
       WindowFrame sourceFrame = new WindowFrame(frameName);
-      sourceFrame.setFillWidget(source_.asWidget(display));
+      sourceFrame.setFillWidget(source_.asWidget());
       source_.forceLoad();
-      LogicalWindow sourceWindow = new LogicalWindow(
+      return sourceLogicalWindow_ = new LogicalWindow(
             sourceFrame,
             new MinimizedWindowFrame(frameName, frameName));
-      sourceLogicalWindows_.add(sourceWindow);
-      return sourceWindow;
    }
 
    private
@@ -1476,12 +1419,11 @@ public class PaneManager
    private final WorkbenchTab tutorialTab_;
    private final OptionsLoader.Shim optionsLoader_;
    private final MainSplitPanel panel_;
-   private ArrayList<LogicalWindow> sourceLogicalWindows_ = new ArrayList<LogicalWindow>();
+   private LogicalWindow sourceLogicalWindow_;
    private final HashMap<Tab, WorkbenchTabPanel> tabToPanel_ = new HashMap<>();
    private final HashMap<Tab, Integer> tabToIndex_ = new HashMap<>();
    private final HashMap<WorkbenchTab, Tab> wbTabToTab_ = new HashMap<>();
    private HashMap<String, LogicalWindow> panesByName_;
-   //private final Widget leftSource_;
    private final DualWindowLayoutPanel left_;
    private final DualWindowLayoutPanel right_;
    private ArrayList<LogicalWindow> panes_;

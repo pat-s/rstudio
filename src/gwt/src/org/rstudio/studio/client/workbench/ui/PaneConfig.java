@@ -30,27 +30,15 @@ public class PaneConfig extends UserPrefsAccessor.Panes
                                           JsArrayString tabSet2,
                                           JsArrayString hiddenTabSet,
                                           boolean consoleLeftOnTop,
-                                          boolean consoleRightOnTop,
-                                          int extraSources) /*-{
+                                          boolean consoleRightOnTop) /*-{
       return { 
          quadrants: panes, 
          tabSet1: tabSet1, 
          tabSet2: tabSet2,
          hiddenTabSet: hiddenTabSet,
          console_left_on_top: consoleLeftOnTop,
-         console_right_on_top: consoleRightOnTop,
-         extra_sources: extraSources
+         console_right_on_top: consoleRightOnTop 
       };
-   }-*/;
-
-   public native static void addSourcePane() /*-{
-      if (this.extra_source == null)
-         this.extra_source = 0;
-      this.extra_sources++;
-   }-*/;
-
-   public native static int getSourcePaneCount() /*-{
-      return this.extra_sources;
    }-*/;
 
    public static PaneConfig createDefault()
@@ -79,7 +67,7 @@ public class PaneConfig extends UserPrefsAccessor.Panes
       tabSet2.push("Viewer");
 
       JsArrayString hiddenTabSet = createArray().cast();
-      return create(panes, tabSet1, tabSet2, hiddenTabSet, false, true, 0);
+      return create(panes, tabSet1, tabSet2, hiddenTabSet, false, true);
    }
 
    public static String[] getAllPanes()
@@ -190,10 +178,10 @@ public class PaneConfig extends UserPrefsAccessor.Panes
       replaceObsoleteTabs(ts1);
       replaceObsoleteTabs(ts2);
 
-      // Presentation tab must always be at the end of the ts1 tabset (this
+      // Presentation tab must always be at the end of the ts1 tabset (this 
       // is so that activating it works even in the presence of optionally
-      // visible tabs). This is normally an invariant but for a time during
-      // the v0.99-1000 preview we allowed the Connections tab to be the
+      // visible tabs). This is normally an invariant but for a time during 
+      // the v0.99-1000 preview we allowed the Connections tab to be the 
       // last one in the tabset.
       if (ts1.get(ts1.length() - 1) != "Presentation")
       {
@@ -233,8 +221,7 @@ public class PaneConfig extends UserPrefsAccessor.Panes
                     copy(getTabSet2()),
                     copy(getHiddenTabSet()),
                     getConsoleLeftOnTop(),
-                    getConsoleRightOnTop(),
-                    getExtraSources());
+                    getConsoleRightOnTop());
    }
    
    public final native boolean isEqualTo(PaneConfig other)  /*-{
